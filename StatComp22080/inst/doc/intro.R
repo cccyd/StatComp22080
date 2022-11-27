@@ -1,0 +1,94 @@
+## -----------------------------------------------------------------------------
+cnn<-function(datasets,num_classes,batch_size,epochs){
+  c(x_train,y_train,x_test,y_test) %<-% list(datasets$train$x,datasets$train$y,
+                                             datasets$test$x,datasets$test$y)
+
+  y_train = to_categorical(y_train,num_classes)
+  y_test = to_categorical(y_test,num_classes)
+
+  img_rows <- c(dim(x_train)[2])
+  img_cols <- c(dim(x_train)[3])
+
+  if(k_image_data_format() == "channels_first"){
+    x_train = array(data = x_train,dim = c(nrow(x_train),1,img_rows,img_cols))
+    x_test = array(data = x_test, dim = c(nrow(x_test),1,img_rows,img_cols))
+    input_shape = c(1,img_rows,img_cols)
+  } else {
+    x_train = array(data = x_train,dim = c(nrow(x_train),img_rows,img_cols,1))
+    x_test = array(data = x_test, dim = c(nrow(x_test),img_rows,img_cols,1))
+    input_shape = c(img_rows,img_cols,1)
+  }
+
+  model = keras_model_sequential()
+
+  model %>%
+    layer_conv_2d(32,kernel_size = c(3,3),activation = 'relu',
+                  input_shape = input_shape,) %>%
+    layer_conv_2d(64,kernel_size = c(3,3),activation = 'relu') %>%
+    layer_max_pooling_2d(pool_size = c(2,2)) %>%
+    layer_dropout(rate = .25) %>%
+    layer_flatten() %>%
+    layer_dense(units = 128,activation = 'relu') %>%
+    layer_dropout(rate = .5) %>%
+    layer_dense(num_classes,activation = 'softmax') %>%
+    compile(loss = 'categorical_crossentropy',
+            optimizer = 'rmsprop')
+
+  model %>%
+    fit(x_train,y_train,
+        batch_size = batch_size,
+        epochs = epochs,
+        validation_split = .2)
+
+  model %>%
+    evaluate(x_test,y_test)
+
+
+  output <- model %>% predict(x_test) %>% k_argmax() %>% as.numeric()
+
+  acc_rio <- length(which(output==datasets$test$y))/length(output)
+  return(c(acc_rio, output))
+}
+
+## -----------------------------------------------------------------------------
+dnn<-function(datasets,num_classes,batch_size,epochs){
+  c(x_train,y_train,x_test,y_test) %<-% list(datasets$train$x,datasets$train$y,
+                                             datasets$test$x,datasets$test$y)
+
+  x_train = array_reshape(x_train, dim = c(nrow(x_train),dim(x_train)[2]*dim(x_train)[3]))
+  x_train = x_train/255
+  x_test = array_reshape(x_test,dim = c(nrow(x_test),dim(x_test)[2]*dim(x_test)[3]))
+  x_test = x_test/255
+
+  y_train = to_categorical(y_train,num_classes)
+  y_test = to_categorical(y_test,num_classes)
+
+  DNN = function(num_classes) {
+    model = keras_model_sequential()
+    model %>%
+      layer_dense(units = 64,activation = 'relu',
+                  input_shape = c(NULL,784),name = 'Hidden-1') %>%
+      layer_dense(units = 32,activation = 'relu',name = 'Hidden-2') %>%
+      layer_dense(units = num_classes,activation = 'softmax') %>%
+      compile(loss = 'categorical_crossentropy',
+              optimizer = 'adam',
+              metrics = 'accuracy')
+  }
+
+  DNN(num_classes) %>%
+    fit(x_train,y_train,
+        epochs = epochs,
+        batch_size = batch_size,
+        validation_split = .2)
+
+
+  DNN(num_classes) %>%
+    evaluate(x_test,y_test)
+
+
+  output <- DNN(num_classes) %>% predict(x_test) %>% k_argmax() %>% as.numeric()
+
+  acc_rio <- length(which(output==datasets$test$y))/length(output)
+  return(c(acc_rio, output))
+}
+

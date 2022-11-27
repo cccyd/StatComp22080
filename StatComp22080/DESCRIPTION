@@ -1,0 +1,20 @@
+Package: StatComp22080
+Type: Package
+Title: Deep learning network used for classification
+Version: 1.0
+Date: 2022-12-15
+Author: Cai Yide
+Maintainer: Cai Yide <sa21229001@mail.ustc.edu.cn>
+Description: Deep learning networks used for the mutil-class classification of graphs.
+License: GPL (>= 2)
+Imports: keras, stats, Rcpp
+LinkingTo: Rcpp
+RoxygenNote: 7.2.1
+Encoding: UTF-8
+Suggests: knitr, rmarkdown
+VignetteBuilder: knitr
+URL: http://github.com/cccyd/StatComp22080
+BugReports: http://github.com/cccyd/StatComp22080/issues
+
+
+
